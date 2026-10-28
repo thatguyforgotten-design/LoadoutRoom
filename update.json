@@ -1,0 +1,6 @@
+{
+  "version": "1.0.18",
+  "url": "https://github.com/thatguyforgotten-design/LoadoutRoom/releases/download/v1.0.18/LoadoutRoom-v1.0.18.zip",
+  "sha256": "da147002cd7416eb61a22a80fbf6dd0a8964e35a72cd58c2a87b72d5db190e3c",
+  "notes": "Renamed the application, window title, branding and main executable to LoadoutRoom. Older updaters and shortcuts remain compatible."
+}

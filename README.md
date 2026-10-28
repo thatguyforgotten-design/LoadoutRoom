@@ -1,4 +1,4 @@
-# Loadout room1.0
+# LoadoutRoom
 
 A small Windows app for checking the skins and stats of players in your VALORANT match. Everything is in one window, so you don’t need to keep a browser or command prompt open.
 
@@ -16,9 +16,9 @@ A small Windows app for checking the skins and stats of players in your VALORANT
 
 ## How to use it
 
-1. Download **Loadout-room1.0-Desktop.zip** from the latest release.
+1. Download **LoadoutRoom-v1.0.18.zip** from the latest release.
 2. Extract the whole ZIP into a folder.
-3. Open **LoadoutRoom1.0.exe**. Leave the `app` and `runtime` folders next to it.
+3. Open **LoadoutRoom.exe**. Leave the `app` and `runtime` folders next to it.
 4. Open VALORANT and join a match, then click a player to see their loadout.
 
 Python is included. You can also click **Show sample** to look around without joining a match.
@@ -40,3 +40,9 @@ This project is a modified version of the original [VALORANT-rank-yoinker](https
 Warden data and artwork from [valorant.gs](https://valorant.gs/weapons/warden/). Game catalog from [VALORANT-API](https://valorant-api.com/). Licenses are included in the download.
 
 Unofficial fan project. Not affiliated with Riot Games.
+
+## Running from source
+
+Install Python with Tk support, then run `python -m pip install -r requirements.txt` and `python app/desktop.py`.
+
+The `app/` and `source/` folders contain the v1.0.18 application and launcher source. The ready-to-run Windows app, bundled Python, and dependency licenses are in the release ZIP.

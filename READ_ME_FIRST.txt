@@ -1,6 +1,7 @@
-LoadoutRoom - version 1.0.21
+LoadoutRoom - version 1.0.22
 
 Extract the complete ZIP and open LoadoutRoom.exe.
-Fixes update handoff reopening an older copy. Shows the match roster before optional catalog and statistics requests finish.
-Version label, taskbar branding and Standard knife fixes are included.
-Original credits and licenses are preserved. Live match behavior still needs in-game validation.
+Fixes region/version detection after long sessions when ShooterGame.log exceeds 8 MB.
+Startup version metadata and recent region endpoints are read together.
+The Warden attribution is kept in the README instead of the footer.
+Original credits and licenses are preserved. Confirm player tracking in-game after updating.

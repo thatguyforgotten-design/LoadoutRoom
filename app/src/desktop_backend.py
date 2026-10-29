@@ -17,6 +17,32 @@ class NotReady(Exception):
     pass
 
 
+def read_connection_info(log_path):
+    """Keep startup version metadata as well as recent region endpoints."""
+    try:
+        with Path(log_path).open("rb") as handle:
+            startup = handle.read(1_000_000)
+            handle.seek(0, 2)
+            end = handle.tell()
+            # Avoid overlapping/duplicating a short log. Both sections belong
+            # to the same open file, so a rotated log cannot mix sessions.
+            handle.seek(max(len(startup), end - 8_000_000))
+            recent = handle.read(8_000_000)
+        log = (startup + b"\n" + recent).decode("utf-8", errors="replace")
+    except OSError:
+        raise NotReady("VALORANT logs are not ready. Reach the main menu first.")
+    pd = re.findall(r"https://pd\.([a-z0-9-]+)\.a\.pvp\.net", log)
+    glz = re.findall(r"https://glz-([a-z0-9-]+)\.([a-z0-9-]+)\.a\.pvp\.net", log)
+    versions = re.findall(r"CI server version:\s*([^\r\n]+)", log)
+    if not glz or not versions:
+        raise NotReady("Waiting for VALORANT's region and version information in its logs.")
+    region = pd[-1] if pd else glz[-1][1]
+    shard, glz_region = glz[-1]
+    if region == "pbe":
+        region, shard, glz_region = "na", "na-1", "na"
+    return region, shard, glz_region, versions[-1].strip()
+
+
 class LocalClient:
     def __init__(self):
         self.session = requests.Session()
@@ -47,22 +73,7 @@ class LocalClient:
         if not all(token.get(k) for k in ("subject", "accessToken", "token")):
             raise NotReady("Riot Client has not finished signing in. Waiting...")
         log_path = local / "VALORANT/Saved/Logs/ShooterGame.log"
-        try:
-            with log_path.open("rb") as handle:
-                handle.seek(0, 2)
-                handle.seek(max(0, handle.tell() - 8_000_000))
-                log = handle.read().decode("utf-8", errors="replace")
-        except OSError:
-            raise NotReady("VALORANT logs are not ready. Reach the main menu first.")
-        pd = re.findall(r"https://pd\.([a-z0-9-]+)\.a\.pvp\.net", log)
-        glz = re.findall(r"https://glz-([a-z0-9-]+)\.([a-z0-9-]+)\.a\.pvp\.net", log)
-        versions = re.findall(r"CI server version:\s*([^\r\n]+)", log)
-        if not glz or not versions:
-            raise NotReady("Waiting for VALORANT's region and version information in its logs.")
-        region = pd[-1] if pd else glz[-1][1]
-        shard, glz_region = glz[-1]
-        if region == "pbe":
-            region, shard, glz_region = "na", "na-1", "na"
+        region, shard, glz_region, client_version = read_connection_info(log_path)
         self.region = region
         self.pd_url = "https://pd." + region + ".a.pvp.net"
         self.glz_url = "https://glz-" + shard + "." + glz_region + ".a.pvp.net"
@@ -70,7 +81,7 @@ class LocalClient:
                     "platformOSVersion": "10.0.19042.1.256.64bit", "platformChipset": "Unknown"}
         self.headers = {"Authorization": "Bearer " + token["accessToken"],
                         "X-Riot-Entitlements-JWT": token["token"],
-                        "X-Riot-ClientVersion": versions[-1].strip(),
+                        "X-Riot-ClientVersion": client_version,
                         "X-Riot-ClientPlatform": base64.b64encode(json.dumps(platform).encode()).decode()}
         self.puuid = token["subject"]
 

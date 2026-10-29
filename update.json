@@ -1,6 +1,6 @@
 {
-  "url": "https://github.com/thatguyforgotten-design/LoadoutRoom/releases/download/v1.0.21/LoadoutRoom-v1.0.21.zip",
-  "version": "1.0.21",
-  "notes": "Fix update handoff reopening older copies. Show the roster before optional metadata and stats load. Includes the version footer and Standard knife artwork fix.",
-  "sha256": "3b793063aabdaff7c1b65b65b2769e26e4e7679b3113ad8be3405554f5d17a41"
+  "version": "1.0.22",
+  "sha256": "d1f4e329a5f6e828c0e154070916b1a3f982a50ce964a2afddcb210318b1632e",
+  "notes": "Fix region/version detection in large game logs by reading startup metadata and recent endpoints. Remove Warden attribution from the footer; credits remain in README.",
+  "url": "https://github.com/thatguyforgotten-design/LoadoutRoom/releases/download/v1.0.22/LoadoutRoom-v1.0.22.zip"
 }

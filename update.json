@@ -1,6 +1,6 @@
 {
-  "version": "1.0.20",
-  "sha256": "511a54589376fae3385d76bf440cbe63f07e8de66740c2f1bfb4e671338535a2",
-  "notes": "Added the installed version at the bottom-right and fixed Standard knife artwork showing an X.",
-  "url": "https://github.com/thatguyforgotten-design/LoadoutRoom/releases/download/v1.0.20/LoadoutRoom-v1.0.20.zip"
+  "url": "https://github.com/thatguyforgotten-design/LoadoutRoom/releases/download/v1.0.21/LoadoutRoom-v1.0.21.zip",
+  "version": "1.0.21",
+  "notes": "Fix update handoff reopening older copies. Show the roster before optional metadata and stats load. Includes the version footer and Standard knife artwork fix.",
+  "sha256": "3b793063aabdaff7c1b65b65b2769e26e4e7679b3113ad8be3405554f5d17a41"
 }

@@ -170,7 +170,7 @@ class TrackerWindow:
         # the minimum window size.
         foot = tk.Frame(self.root, bg=BG, padx=28, pady=8)
         foot.pack(side="bottom", fill="x")
-        self.label(foot, "Unofficial VALORANT companion  |  Warden metadata & artwork: valorant.gs",
+        self.label(foot, "Unofficial VALORANT companion",
                    9, MUTED).pack(side="left")
         self.version_label = self.label(foot, "v" + updates.VERSION, 9, MUTED)
         self.version_label.pack(side="right", padx=(16, 0))

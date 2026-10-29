@@ -1,6 +1,6 @@
 {
-  "url": "https://github.com/thatguyforgotten-design/LoadoutRoom/releases/download/v1.0.19/LoadoutRoom-v1.0.19.zip",
-  "version": "1.0.19",
-  "sha256": "82eba5b0967cadd9d029c01778ed4f52711fe94a0bc70ac7f4587df0d7ea141e",
-  "notes": "Fix Windows taskbar right-click branding: LoadoutRoom name, coral LR icon and correct launcher. If Python was already pinned, unpin it and pin LoadoutRoom again."
+  "version": "1.0.20",
+  "sha256": "511a54589376fae3385d76bf440cbe63f07e8de66740c2f1bfb4e671338535a2",
+  "notes": "Added the installed version at the bottom-right and fixed Standard knife artwork showing an X.",
+  "url": "https://github.com/thatguyforgotten-design/LoadoutRoom/releases/download/v1.0.20/LoadoutRoom-v1.0.20.zip"
 }

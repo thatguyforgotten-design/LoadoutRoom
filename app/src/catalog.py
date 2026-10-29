@@ -123,7 +123,10 @@ def resolve_weapon(weapon_id, item, weapons):
                                 or ((levels[0].get("displayIcon")) if levels else None))
     # Standard skins can have a valid URL whose artwork is an X placeholder.
     # Use the base weapon artwork rather than a default-skin/chroma placeholder.
-    if record["skinDisplayName"].casefold().startswith("standard ") and record["weaponDisplayIcon"]:
+    # The default knife is named "Melee", not "Standard Melee". Use the
+    # catalog's default-skin ID as well, so renamed/localized defaults work.
+    is_default = bool(record["skin"]) and record["skin"] == normalize_id((weapon or {}).get("defaultSkinUuid"))
+    if (is_default or record["skinDisplayName"].casefold().startswith("standard ")) and record["weaponDisplayIcon"]:
         record["skinDisplayIcon"] = record["weaponDisplayIcon"]
     if chroma.get("displayName"):
         record["variantDisplayName"] = chroma["displayName"]

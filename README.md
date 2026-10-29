@@ -13,7 +13,8 @@ A small Windows app for checking the skins and stats of players in your VALORANT
 - Agent-coloured names, with hidden names shown as their agent
 - Search, weapon filters and a keep-on-top option
 - Installed version shown in the bottom-right corner
-- Updates through the app, with permission before installing
+- A visible update-available indicator, with permission before installing
+- Customize your background color, with saved preferences and a reset option
 
 ## How to use it
 
@@ -24,7 +25,9 @@ A small Windows app for checking the skins and stats of players in your VALORANT
 
 Python is included. You can also click **Show sample** to look around without joining a match.
 
-For updates, open **Updates → Save and check**.
+For updates, open **Updates → Save and check**. The button turns coral when a newer version is available. You can install it later from the same button.
+
+For background colors, open **Customize → Choose color**. Your choice is saved automatically; **Reset to default** brings back the original background.
 
 ## A few things to know
 

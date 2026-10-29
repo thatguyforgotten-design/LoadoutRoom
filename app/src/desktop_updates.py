@@ -11,7 +11,7 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import urlparse
 import requests
 
-VERSION = "1.0.22"
+VERSION = "1.0.23"
 DEFAULT_FEED = "https://github.com/thatguyforgotten-design/LoadoutRoom/releases/latest/download/update.json"
 MAX_DOWNLOAD = 60 * 1024 * 1024
 MAX_EXPANDED = 300 * 1024 * 1024

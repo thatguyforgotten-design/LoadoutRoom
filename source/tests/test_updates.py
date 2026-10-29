@@ -5,9 +5,9 @@ from src import desktop_updates as u
 
 class UpdateTests(unittest.TestCase):
     def release(self, **kw):
-        return dict(version="1.0.23", url="https://example.com/app.zip", sha256="a"*64, notes="Test", **kw)
+        return dict(version="1.0.24", url="https://example.com/app.zip", sha256="a"*64, notes="Test", **kw)
     def test_versions(self):
-        self.assertGreater(u.version_tuple("1.0.23"),u.version_tuple("1.0.9"))
+        self.assertGreater(u.version_tuple("1.0.24"),u.version_tuple("1.0.9"))
         for bad in ("x", "1.0", "1.0.2;run"):
             with self.assertRaises(ValueError): u.version_tuple(bad)
     def test_urls(self):
@@ -15,7 +15,7 @@ class UpdateTests(unittest.TestCase):
             with self.assertRaises(ValueError): u.https_url(bad)
     def test_new_release(self):
         with patch.object(u,"read_https",return_value=json.dumps(self.release()).encode()):
-            self.assertEqual(u.check_update("https://example.com/feed")["version"],"1.0.23")
+            self.assertEqual(u.check_update("https://example.com/feed")["version"],"1.0.24")
     def test_current(self):
         release=self.release(); release["version"]=u.VERSION
         with patch.object(u,"read_https",return_value=json.dumps(release).encode()):

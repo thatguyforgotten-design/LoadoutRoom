@@ -1,7 +1,7 @@
-LoadoutRoom - version 1.0.22
+LoadoutRoom - version 1.0.23
 
 Extract the complete ZIP and open LoadoutRoom.exe.
-Fixes region/version detection after long sessions when ShooterGame.log exceeds 8 MB.
-Startup version metadata and recent region endpoints are read together.
-The Warden attribution is kept in the README instead of the footer.
-Original credits and licenses are preserved. Confirm player tracking in-game after updating.
+Updates turns coral and says Update available when a check finds a newer version. Choose Updates to review and approve installation.
+Customize lets you choose a background color or reset to default. Your choice is saved for future launches.
+Includes the large-log tracking fix, Standard knife artwork fix and version footer.
+Original credits and licenses are preserved.

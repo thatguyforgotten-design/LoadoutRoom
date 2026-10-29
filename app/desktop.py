@@ -10,7 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
 import tkinter as tk
-from tkinter import ttk, messagebox, simpledialog
+from tkinter import ttk, messagebox, simpledialog, colorchooser
 from urllib.parse import urlparse
 
 # pythonw has no console streams. Libraries must not depend on a terminal.
@@ -26,6 +26,7 @@ from src.desktop_stats import team_summary
 from src import desktop_updates as updates
 from src.desktop_colors import agent_color
 from src.windows_identity import set_process_identity, set_window_identity
+from src import desktop_appearance as appearance
 
 BG, PANEL, CARD, LINE = "#0d1017", "#11151e", "#1a202c", "#29303d"
 FG, MUTED, CORAL, BLUE, RED = "#f2f4fc", "#9aa8c0", "#ff626a", "#8bbfff", "#ff8790"
@@ -126,6 +127,9 @@ class TrackerWindow:
         self.render_key = None
         self.team_filter = "All"
         self.update_busy = False
+        self.available_release = None
+        self.background_color = BG
+        self.appearance_initialized = False
         self.search = tk.StringVar()
         self.weapon_filter = tk.StringVar(value="All weapons")
         self.always_top = tk.BooleanVar()
@@ -143,6 +147,7 @@ class TrackerWindow:
         style.configure("Vertical.TScrollbar", background=CARD, troughcolor=PANEL,
                         arrowcolor=MUTED, bordercolor=PANEL)
         self.build()
+        self.apply_background(appearance.load_background(BG))
         self.search.trace_add("write", lambda *args: self.schedule_render())
         self.weapon_filter.trace_add("write", lambda *args: self.schedule_render())
         root.protocol("WM_DELETE_WINDOW", self.close)
@@ -156,8 +161,14 @@ class TrackerWindow:
                 root.after(2500, lambda: self.check_updates(quiet=True))
 
     def label(self, parent, text, size=10, color=FG, bold=False, **kw):
-        return tk.Label(parent, text=text, fg=color, bg=parent.cget("bg"),
-                        font=("Segoe UI Semibold" if bold else "Segoe UI", size), **kw)
+        original = color
+        if parent.cget("bg") == self.background_color and color in (FG, MUTED):
+            color = appearance.text_colors(self.background_color)[0 if color == FG else 1]
+        label = tk.Label(parent, text=text, fg=color, bg=parent.cget("bg"),
+                         font=("Segoe UI Semibold" if bold else "Segoe UI", size), **kw)
+        if parent.cget("bg") == self.background_color and original in (FG, MUTED):
+            label._background_text_role = original
+        return label
 
     def button(self, parent, title, action, accent=False):
         return tk.Button(parent, text=title, command=action, bg=CORAL if accent else CARD,
@@ -188,10 +199,12 @@ class TrackerWindow:
         self.label(head, "Loadout", 25, bold=True).pack(side="left")
         self.label(head, "Room", 25, color=CORAL).pack(side="left")
         self.button(head, "Refresh match", self.refresh, True).pack(side="right", padx=(10, 0))
-        self.button(head, "Updates", self.update_menu).pack(side="right", padx=(8, 0))
+        self.update_button = self.button(head, "Updates", self.update_menu)
+        self.update_button.pack(side="right", padx=(8, 0))
+        self.customize_button = self.button(head, "Customize", self.customize_menu)
+        self.customize_button.pack(side="right", padx=(8, 0))
         self.sample_button = self.button(head, "Show sample", self.toggle_sample)
         self.sample_button.pack(side="right")
-        self.label(head, "MATCH INTELLIGENCE", 8, color=MUTED).pack(side="right", padx=20)
         meta = tk.Frame(self.root, bg=BG, padx=28)
         meta.pack(fill="x")
         self.connection = self.label(meta, "Open VALORANT. Connecting automatically...", 10, MUTED, anchor="w")
@@ -315,6 +328,64 @@ class TrackerWindow:
         except (AttributeError, OSError):
             pass
 
+    def apply_background(self, color):
+        color = appearance.normalize_color(color)
+        old = self.background_color
+        foreground, muted = appearance.text_colors(color)
+        def recolor(widget):
+            options = widget.keys()
+            if not self.appearance_initialized and "background" in options and widget.cget("background").lower() == BG:
+                widget._custom_background = True
+            if getattr(widget, "_custom_background", False):
+                if "foreground" in options:
+                    original = getattr(widget, "_background_text_role", widget.cget("foreground"))
+                    if original in (FG, MUTED):
+                        widget._background_text_role = original
+                        widget.configure(foreground=foreground if original == FG else muted)
+                widget.configure(background=color)
+            for option in ("activebackground", "highlightbackground"):
+                flag = "_custom_" + option
+                if not self.appearance_initialized and option in options and str(widget.cget(option)).lower() == BG:
+                    setattr(widget, flag, True)
+                if getattr(widget, flag, False):
+                    widget.configure(**{option: color})
+            for child in widget.winfo_children():
+                recolor(child)
+        recolor(self.root)
+        self.background_color = color
+        self.appearance_initialized = True
+
+    def customize_menu(self):
+        dialog = tk.Toplevel(self.root)
+        dialog.title("LoadoutRoom - Customize")
+        dialog.configure(bg=PANEL)
+        dialog.transient(self.root)
+        dialog.resizable(False, False)
+        box = tk.Frame(dialog, bg=PANEL, padx=24, pady=20)
+        box.pack(fill="both", expand=True)
+        self.label(box, "Customize background", 17, bold=True).pack(anchor="w")
+        self.label(box, "Your color is saved automatically for next time.", 10, MUTED).pack(anchor="w", pady=(8, 16))
+        current = self.label(box, self.background_color.upper(), 11)
+        current.pack(anchor="w", pady=(0, 12))
+        def save_color(color):
+            try:
+                appearance.save_background(color)
+                self.apply_background(color)
+                current.configure(text=self.background_color.upper())
+            except (OSError, ValueError) as error:
+                messagebox.showerror("Customize", "Could not save your color. " + str(error), parent=dialog)
+        def choose():
+            _, color = colorchooser.askcolor(color=self.background_color, title="LoadoutRoom background", parent=dialog)
+            if color:
+                save_color(color)
+        self.button(box, "Choose color", choose, True).pack(side="left", padx=(0, 10))
+        self.button(box, "Reset to default", lambda: save_color(BG)).pack(side="left")
+
+    def set_update_indicator(self, release):
+        self.available_release = release
+        self.update_button.configure(text="Update available" if release else "Updates",
+                                     bg=CORAL if release else CARD, fg=BG if release else FG)
+
     def update_menu(self):
         dialog = tk.Toplevel(self.root)
         dialog.title("LoadoutRoom - Updates")
@@ -326,6 +397,15 @@ class TrackerWindow:
         self.label(box, "Updates · version " + updates.VERSION, 17, bold=True).pack(anchor="w")
         self.label(box, "Each installation requires your permission. Your previous copy is kept.",
                    10, MUTED, wraplength=440, justify="left").pack(anchor="w", pady=10)
+        if self.available_release:
+            release = self.available_release
+            self.label(box, "Version " + release["version"] + " is available", 12, CORAL, True).pack(anchor="w", pady=(0, 8))
+            def install():
+                if self.update_busy:
+                    return
+                dialog.destroy()
+                self.handle_update(("update_available", release, False))
+            self.button(box, "Review and install update", install, True).pack(anchor="w", pady=(0, 12))
         settings = updates.read_settings()
         self.label(box, "Publisher update-feed URL (HTTPS)", 10).pack(anchor="w")
         address = tk.StringVar(value=settings["feed"])
@@ -368,9 +448,12 @@ class TrackerWindow:
                 messagebox.showerror("Updates", event[1], parent=self.root)
         elif event[0] == "update_available":
             release, quiet = event[1], event[2]
+            self.set_update_indicator(release)
             if not release:
                 if not quiet:
                     messagebox.showinfo("Updates", "You have the latest published version (" + updates.VERSION + ").", parent=self.root)
+                return
+            if quiet:
                 return
             text = "Version " + release["version"] + " is available.\n\n" + release.get("notes", "")[:2000]
             text += "\n\nDownload, install and restart now? Your previous copy will be kept."
@@ -415,7 +498,7 @@ class TrackerWindow:
             self.snapshot, self.selected = None, None
             self.update_player_buttons([])
             self.tree.delete(*self.tree.get_children())
-            self.connection.config(text="Returning to live match...", fg=MUTED)
+            self.connection.config(text="Returning to live match...", fg=appearance.text_colors(self.background_color)[1])
             for team in self.team_labels.values():
                 team[0].config(text="N/A")
                 team[1].config(text="Waiting for live data")
@@ -453,7 +536,7 @@ class TrackerWindow:
             elif kind == "snapshot" and not self.sample:
                 latest_snapshot = event[1]
             elif kind == "status" and not self.sample:
-                self.connection.config(text=event[1], fg=MUTED)
+                self.connection.config(text=event[1], fg=appearance.text_colors(self.background_color)[1])
             elif kind == "image":
                 url, data = event[1], event[2]
                 self.pending.discard(url)
@@ -476,7 +559,7 @@ class TrackerWindow:
         players = snapshot.get("players", [])
         summary = team_summary(players)
         self.connection.config(text=snapshot.get("state", "") + (" | " + snapshot["map"] if snapshot.get("map") else ""),
-                               fg=CORAL if snapshot.get("sample") else FG)
+                               fg=CORAL if snapshot.get("sample") else appearance.text_colors(self.background_color)[0])
         for name in ("Blue", "Red"):
             team = summary[name]
             self.team_labels[name][0].config(text=percent(team["average"]))

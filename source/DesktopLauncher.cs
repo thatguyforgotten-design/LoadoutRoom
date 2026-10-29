@@ -6,8 +6,8 @@ using System.Windows.Forms;
 [assembly: AssemblyTitle("LoadoutRoom")]
 [assembly: AssemblyProduct("LoadoutRoom")]
 [assembly: AssemblyDescription("VALORANT desktop roster, win rates and loadouts")]
-[assembly: AssemblyVersion("1.0.22.0")]
-[assembly: AssemblyFileVersion("1.0.22.0")]
+[assembly: AssemblyVersion("1.0.23.0")]
+[assembly: AssemblyFileVersion("1.0.23.0")]
 
 internal static class Program {
     internal static bool IsNewerRelease(string target, string current) {

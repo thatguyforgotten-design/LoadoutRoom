@@ -1,6 +1,6 @@
-LoadoutRoom - version 1.0.20
+LoadoutRoom - version 1.0.21
 
-Extract the whole ZIP and open LoadoutRoom.exe. Keep app and runtime beside it.
-The installed version now appears in the bottom-right corner of the app.
-Updates ask permission before installing. Original credits and licenses are included.
-Live match and history features still need in-game validation.
+Extract the complete ZIP and open LoadoutRoom.exe.
+Fixes update handoff reopening an older copy. Shows the match roster before optional catalog and statistics requests finish.
+Version label, taskbar branding and Standard knife fixes are included.
+Original credits and licenses are preserved. Live match behavior still needs in-game validation.

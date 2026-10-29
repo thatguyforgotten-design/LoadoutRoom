@@ -168,8 +168,22 @@ class Collector(threading.Thread):
         self.status("Loading match roster and equipped items...")
         details = client.get("glz", "/" + endpoint + "/v1/matches/" + match_id)
         players = (details.get("AllyTeam") or {}).get("Players", []) if endpoint == "pregame" else details.get("Players", [])
+        players = [p for p in players if isinstance(p, dict) and p.get("Subject")]
+        # The roster is essential; public artwork, act metadata and stats are
+        # optional and can be slow or unavailable. Show every player first.
+        rows = []
+        for p in players:
+            name, level = visible_identity(p, {}, "Loading agent...", client.puuid)
+            rows.append({"id": p["Subject"], "name": name, "agent": "Loading agent...",
+                         "level": level, "team": p.get("TeamID") or (details.get("AllyTeam") or {}).get("TeamID") or "Other",
+                         "weapons": [], "winRate": None, "games": None, "rank": "Unavailable"})
+        self.events.put(("snapshot", {"state": state, "map": "Current match", "players": list(rows),
+                                       "rosterSize": len(players), "time": time.time(), "partial": True}))
         if not self.content:
-            self.content = client.get("content", "/content-service/v3/content")
+            try:
+                self.content = client.get("content", "/content-service/v3/content")
+            except (requests.RequestException, NotReady, ValueError):
+                self.content = {}
         season_id = next((s.get("ID") for s in self.content.get("Seasons", [])
                           if s.get("IsActive") and s.get("Type") == "act"), None)
         try:
@@ -195,7 +209,6 @@ class Collector(threading.Thread):
         inventories = {}
         for entry in raw_loadouts.get("Loadouts", []):
             inventories[normalize_id(entry.get("Subject"))] = entry.get("Loadout", entry)
-        rows = []
         for index, p in enumerate(players):
             if self.stop_event.is_set() or self.paused.is_set():
                 return
@@ -225,8 +238,8 @@ class Collector(threading.Thread):
                 record["buddy_displayIcon"] = buddy.get("displayIcon")
                 items.append(record)
             team = p.get("TeamID") or (details.get("AllyTeam") or {}).get("TeamID") or "Other"
-            rows.append({"id": subject, "name": name, "agent": agent_name, "level": level,
-                         "team": team, "agentColor": next(iter(agent.get("backgroundGradientColors") or []), None), "weapons": items, **stats})
+            rows[index] = {"id": subject, "name": name, "agent": agent_name, "level": level,
+                           "team": team, "agentColor": next(iter(agent.get("backgroundGradientColors") or []), None), "weapons": items, **stats}
             # Stats appear progressively; the UI remains interactive during requests.
             self.events.put(("snapshot", {"state": state, "map": self.map_name(details),
                                            "players": list(rows), "rosterSize": len(players),

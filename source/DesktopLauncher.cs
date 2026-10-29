@@ -6,10 +6,18 @@ using System.Windows.Forms;
 [assembly: AssemblyTitle("LoadoutRoom")]
 [assembly: AssemblyProduct("LoadoutRoom")]
 [assembly: AssemblyDescription("VALORANT desktop roster, win rates and loadouts")]
-[assembly: AssemblyVersion("1.0.20.0")]
-[assembly: AssemblyFileVersion("1.0.20.0")]
+[assembly: AssemblyVersion("1.0.21.0")]
+[assembly: AssemblyFileVersion("1.0.21.0")]
 
 internal static class Program {
+    internal static bool IsNewerRelease(string target, string current) {
+        if (String.Equals(Path.GetDirectoryName(target), Path.GetDirectoryName(current), StringComparison.OrdinalIgnoreCase)) return false;
+        Version targetVersion;
+        string folder = new DirectoryInfo(Path.GetDirectoryName(target)).Name;
+        if (!Version.TryParse(folder.Split('-')[0], out targetVersion)) return false;
+        Version build = Assembly.GetExecutingAssembly().GetName().Version;
+        return targetVersion > new Version(build.Major, build.Minor, build.Build);
+    }
     [STAThread]
     static int Main(string[] args) {
         string root = AppDomain.CurrentDomain.BaseDirectory;
@@ -27,7 +35,7 @@ internal static class Program {
                     if (target.StartsWith(releaseRoot, StringComparison.OrdinalIgnoreCase) &&
                         (String.Equals(Path.GetFileName(target), "LoadoutRoom1.0.exe", StringComparison.OrdinalIgnoreCase) ||
                          String.Equals(Path.GetFileName(target), "LoadoutRoom.exe", StringComparison.OrdinalIgnoreCase)) &&
-                        !String.Equals(target, current, StringComparison.OrdinalIgnoreCase) && File.Exists(target) &&
+                        IsNewerRelease(target, current) && File.Exists(target) &&
                         File.Exists(Path.Combine(Path.GetDirectoryName(target), "runtime", "pythonw.exe"))) {
                         ProcessStartInfo forward = new ProcessStartInfo(target);
                         forward.UseShellExecute = false;

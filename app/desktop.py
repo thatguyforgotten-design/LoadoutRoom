@@ -389,11 +389,8 @@ class TrackerWindow:
             import subprocess
             try:
                 exe = Path(event[1])
-                subprocess.Popen([str(exe)], cwd=str(exe.parent))
-                legacy = exe.with_name("LoadoutRoom1.0.exe")
-                target = legacy if legacy.is_file() else exe
-                (updates.settings_path().parent / "active-release.txt").write_text(str(target), encoding="utf-8")
-            except OSError:
+                updates.activate_release(exe, subprocess.Popen)
+            except (OSError, ValueError):
                 messagebox.showerror("Updates", "The new version could not start. Your previous app is still open.", parent=self.root)
                 return
             self.close()

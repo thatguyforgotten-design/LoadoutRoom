@@ -11,7 +11,7 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import urlparse
 import requests
 
-VERSION = "1.0.20"
+VERSION = "1.0.21"
 DEFAULT_FEED = "https://github.com/thatguyforgotten-design/LoadoutRoom/releases/latest/download/update.json"
 MAX_DOWNLOAD = 60 * 1024 * 1024
 MAX_EXPANDED = 300 * 1024 * 1024
@@ -122,3 +122,31 @@ def install_release(release):
     except Exception:
         shutil.rmtree(stage, ignore_errors=True)
         raise
+
+
+def activate_release(exe, launch):
+    """Select the new release before launching; restore the pointer on failure."""
+    exe = Path(exe).resolve()
+    parent = settings_path().parent
+    releases = (parent / "releases").resolve()
+    if not exe.is_relative_to(releases) or exe.name not in ("LoadoutRoom.exe", "LoadoutRoom1.0.exe") or not exe.is_file():
+        raise ValueError("The update launcher must belong to an installed LoadoutRoom release.")
+    pointer = parent / "active-release.txt"
+    previous = pointer.read_bytes() if pointer.exists() else None
+    # Keep the legacy filename for shortcuts created by older versions.
+    legacy = exe.with_name("LoadoutRoom1.0.exe")
+    target = legacy if legacy.is_file() else exe
+    temporary = pointer.with_suffix(".tmp")
+    try:
+        temporary.write_text(str(target), encoding="utf-8")
+        os.replace(temporary, pointer)
+        launch([str(exe)], cwd=str(exe.parent))
+    except Exception:
+        if previous is None:
+            pointer.unlink(missing_ok=True)
+        else:
+            temporary.write_bytes(previous)
+            os.replace(temporary, pointer)
+        raise
+    finally:
+        temporary.unlink(missing_ok=True)

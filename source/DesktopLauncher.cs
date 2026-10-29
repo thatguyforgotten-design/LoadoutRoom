@@ -6,8 +6,8 @@ using System.Windows.Forms;
 [assembly: AssemblyTitle("LoadoutRoom")]
 [assembly: AssemblyProduct("LoadoutRoom")]
 [assembly: AssemblyDescription("VALORANT desktop roster, win rates and loadouts")]
-[assembly: AssemblyVersion("1.0.19.0")]
-[assembly: AssemblyFileVersion("1.0.19.0")]
+[assembly: AssemblyVersion("1.0.20.0")]
+[assembly: AssemblyFileVersion("1.0.20.0")]
 
 internal static class Program {
     [STAThread]

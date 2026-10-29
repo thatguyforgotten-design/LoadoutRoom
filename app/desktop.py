@@ -166,6 +166,16 @@ class TrackerWindow:
                          padx=20, pady=11, cursor="hand2", font=("Segoe UI Semibold", 10))
 
     def build(self):
+        # Reserve the footer before the expanding loadout panel, including at
+        # the minimum window size.
+        foot = tk.Frame(self.root, bg=BG, padx=28, pady=8)
+        foot.pack(side="bottom", fill="x")
+        self.label(foot, "Unofficial VALORANT companion  |  Warden metadata & artwork: valorant.gs",
+                   9, MUTED).pack(side="left")
+        self.version_label = self.label(foot, "v" + updates.VERSION, 9, MUTED)
+        self.version_label.pack(side="right", padx=(16, 0))
+        self.updated = self.label(foot, "No live match received", 9, MUTED)
+        self.updated.pack(side="right")
         head = tk.Frame(self.root, bg=BG, padx=20, pady=10)
         head.pack(fill="x")
         logo = tk.Canvas(head, width=42, height=42, bg=BG, highlightthickness=0)
@@ -285,12 +295,6 @@ class TrackerWindow:
         self.cards.bind("<Configure>", lambda event: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
         self.canvas.bind("<Configure>", self.resize_inventory)
         self.root.bind("<MouseWheel>", self.scroll_equipment, add="+")
-        foot = tk.Frame(self.root, bg=BG, padx=28, pady=8)
-        foot.pack(fill="x")
-        self.label(foot, "Unofficial VALORANT companion  |  Warden metadata & artwork: valorant.gs",
-                   9, MUTED).pack(side="left")
-        self.updated = self.label(foot, "No live match received", 9, MUTED)
-        self.updated.pack(side="right")
         self.render_loadout()
 
     def draw_team_bar(self, name):

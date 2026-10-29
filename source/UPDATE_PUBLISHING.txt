@@ -1,12 +1,7 @@
-LoadoutRoom update publishing — v1.0.19
+LoadoutRoom v1.0.20
 
-The default update feed is:
-https://github.com/thatguyforgotten-design/LoadoutRoom/releases/latest/download/update.json
-
-Set app/src/desktop_updates.py VERSION for each release. Upload the complete Windows ZIP and update.json to the release. The manifest contains version, url, sha256 and notes. Calculate sha256 from the final ZIP; never replace a ZIP without updating its checksum.
-
-The ZIP contains LoadoutRoom.exe, app/ and runtime/ at its root. LoadoutRoom1.0.exe remains for compatibility with older shortcuts and updaters. Original and dependency licenses must remain included.
-
-Startup checks can be disabled in Updates. Each installation asks permission, checks the SHA-256 digest and retains the previous installation. Updates install into %LOCALAPPDATA%/LoadoutRoom/releases. Original launchers follow active-release.txt.
-
-Live match and history features still need validation in-game.
+The default feed is https://github.com/thatguyforgotten-design/LoadoutRoom/releases/latest/download/update.json
+Each installation asks permission. Upload the ZIP and matching update.json to the release.
+Keep the application, bundled runtime, original credits and dependency licenses together.
+Set app/src/desktop_updates.py VERSION and launcher assembly versions for each release.
+Calculate the SHA-256 checksum from the final ZIP before publishing the manifest.

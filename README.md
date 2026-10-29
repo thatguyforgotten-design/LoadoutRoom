@@ -12,11 +12,12 @@ A small Windows app for checking the skins and stats of players in your VALORANT
 - Headshot % from up to 10 recent Competitive matches
 - Agent-coloured names, with hidden names shown as their agent
 - Search, weapon filters and a keep-on-top option
+- Installed version shown in the bottom-right corner
 - Updates through the app, with permission before installing
 
 ## How to use it
 
-1. Download **LoadoutRoom-v1.0.19.zip** from the latest release.
+1. Download **LoadoutRoom-v1.0.20.zip** from the latest release.
 2. Extract the whole ZIP into a folder.
 3. Open **LoadoutRoom.exe**. Leave the `app` and `runtime` folders next to it.
 4. Open VALORANT and join a match, then click a player to see their loadout.
@@ -45,4 +46,4 @@ Unofficial fan project. Not affiliated with Riot Games.
 
 Install Python with Tk support, then run `python -m pip install -r requirements.txt` and `python app/desktop.py`.
 
-The `app/` and `source/` folders contain the v1.0.19 application and launcher source. The ready-to-run Windows app, bundled Python, and dependency licenses are in the release ZIP.
+The `app/` and `source/` folders contain the v1.0.20 application and launcher source. The ready-to-run Windows app, bundled Python, and dependency licenses are in the release ZIP.

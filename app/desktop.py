@@ -25,6 +25,7 @@ from src.desktop_backend import Collector, sample_snapshot, HeadshotCollector
 from src.desktop_stats import team_summary
 from src import desktop_updates as updates
 from src.desktop_colors import agent_color
+from src.windows_identity import set_process_identity, set_window_identity
 
 BG, PANEL, CARD, LINE = "#0d1017", "#11151e", "#1a202c", "#29303d"
 FG, MUTED, CORAL, BLUE, RED = "#f2f4fc", "#9aa8c0", "#ff626a", "#8bbfff", "#ff8790"
@@ -742,14 +743,19 @@ if __name__ == "__main__":
     else:
         try:
             try:
-                import ctypes
-                ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("LoadoutRoom.Desktop")
+                set_process_identity()
             except (AttributeError, OSError):
                 pass
             root = tk.Tk()
+            root.withdraw()
+            try:
+                set_window_identity(root, Path(__file__).parent)
+            except OSError:
+                pass
             app = TrackerWindow(root, start_collector="--demo" not in sys.argv)
             if "--demo" in sys.argv:
                 app.toggle_sample()
+            root.deiconify()
             root.mainloop()
         except Exception:
             import traceback

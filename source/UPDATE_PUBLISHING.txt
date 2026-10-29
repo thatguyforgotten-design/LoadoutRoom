@@ -1,4 +1,4 @@
-LoadoutRoom update publishing — v1.0.18
+LoadoutRoom update publishing — v1.0.19
 
 The default update feed is:
 https://github.com/thatguyforgotten-design/LoadoutRoom/releases/latest/download/update.json

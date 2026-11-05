@@ -31,4 +31,4 @@ def save_background(color):
 def text_colors(background):
     red, green, blue = (int(background[i:i+2], 16) for i in (1, 3, 5))
     light = .2126 * red + .7152 * green + .0722 * blue > 150
-    return ("#101827", "#475569") if light else ("#f2f4fc", "#9aa8c0")
+    return ("#101827", "#475569") if light else ("#f7f1e4", "#b1a6c2")

@@ -8,7 +8,29 @@ RANK_NAMES = ["Unranked"] * 3 + [
 ] + ["Radiant"]
 
 
-def competitive_stats(mmr, season_id, tier_maps=None):
+def season_labels(content):
+    """Resolve acts through Riot's episode parents, without guessing from IDs."""
+    seasons = {str(s["ID"]).casefold(): s for s in (content or {}).get("Seasons", [])
+               if isinstance(s, dict) and s.get("ID")}
+    labels = {}
+    for key, act in seasons.items():
+        parent = seasons.get(str(act.get("ParentID", "")).casefold(), {})
+        if str(act.get("Type", "")).casefold() != "act" or not parent.get("Name"):
+            continue
+        if str(parent.get("Type", "")).casefold() != "episode":
+            continue
+        labels[key] = str(parent["Name"]) + (" / " + str(act["Name"]) if act.get("Name") else "")
+    return labels
+
+
+def peak_label(player):
+    rank = player.get("peakRank", "Unavailable")
+    if rank == "Unavailable":
+        return rank
+    return rank + " · " + (player.get("peakEpisode") or "Episode unavailable")
+
+
+def competitive_stats(mmr, season_id, tier_maps=None, season_names=None):
     seasonal = ((mmr or {}).get("QueueSkills") or {}).get("competitive") or {}
     season = (seasonal.get("SeasonalInfoBySeasonID") or {}).get(season_id) or {}
     games = season.get("NumberOfGames")
@@ -41,6 +63,7 @@ def competitive_stats(mmr, season_id, tier_maps=None):
     rr = season.get("RankedRating")
     return {"peakRank": peak[1] if peak else "Unavailable",
             "peakSeason": peak[2] if peak else None,
+            "peakEpisode": (season_names or {}).get(str(peak[2]).casefold()) if peak else None,
             "rr": rr if isinstance(rr, int) and not isinstance(rr, bool) and rr >= 0 else None,
             "winRate": wins / games * 100 if valid else None,
             "games": games if isinstance(games, int) and games >= 0 else None,

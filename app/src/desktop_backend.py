@@ -10,7 +10,7 @@ from pathlib import Path
 import requests
 from src.catalog import (public_catalog, merge_weapons, normalize_id, resolve_weapon,
                          WARDEN_ID, WARDEN_SKINS)
-from src.desktop_stats import competitive_stats, visible_identity, team_summary, headshot_stats
+from src.desktop_stats import competitive_stats, visible_identity, team_summary, headshot_stats, season_labels
 
 
 class NotReady(Exception):
@@ -237,7 +237,7 @@ class Collector(threading.Thread):
             else:
                 try:
                     mmr = client.get("pd", "/mmr/v1/players/" + subject, True)
-                    stats = competitive_stats(mmr, season_id, self.tier_maps)
+                    stats = competitive_stats(mmr, season_id, self.tier_maps, season_labels(self.content))
                 except (requests.RequestException, NotReady, ValueError, KeyError, TypeError):
                     stats = {"winRate": None, "games": None, "wins": None, "rank": "Unavailable"}
                 self.stats_cache[subject] = (time.time(), stats)
@@ -281,7 +281,7 @@ def sample_snapshot():
                         "agent": agents[i % 5], "team": "Blue" if i < 5 else "Red",
                         "level": 30 + i * 17, "rank": "Gold " + str(i % 3 + 1),
                         "games": games, "wins": wins, "winRate": wins / games * 100,
-                        "peakRank": "Diamond " + str(i % 3 + 1), "rr": 30 + i,
+                        "peakEpisode": "EPISODE 09 / ACT II (sample)", "peakRank": "Diamond " + str(i % 3 + 1), "rr": 30 + i,
                         "weapons": [items[i % 3], items[3]]})
     return {"state": "SAMPLE PREVIEW", "map": "Example match", "players": players,
             "time": time.time(), "sample": True}

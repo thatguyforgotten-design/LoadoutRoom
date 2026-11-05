@@ -1,7 +1,13 @@
-LoadoutRoom v1.0.20
+LoadoutRoom release publishing
+
+Edit app/src/desktop_updates.py VERSION and launcher assembly versions together.
+Update source/release-notes.md and push to main. The Windows release workflow
+builds the app, runs the tests, and publishes the ZIP plus its matching update.json.
+You can also start the workflow manually from GitHub Actions.
+
+Build locally on Windows: python source/build_release.py
+The build verifies the v1.0.23 base archive checksum before reusing its runtime.
+Application code comes from this repository. Credits and dependency licenses stay included.
 
 The default feed is https://github.com/thatguyforgotten-design/LoadoutRoom/releases/latest/download/update.json
-Each installation asks permission. Upload the ZIP and matching update.json to the release.
-Keep the application, bundled runtime, original credits and dependency licenses together.
-Set app/src/desktop_updates.py VERSION and launcher assembly versions for each release.
-Calculate the SHA-256 checksum from the final ZIP before publishing the manifest.
+Each installation asks permission. Existing releases are never overwritten by the workflow.

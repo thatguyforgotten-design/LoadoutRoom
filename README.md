@@ -7,7 +7,7 @@ A small Windows app for checking the skins and stats of players in your VALORANT
 ## What’s in it
 
 - Player loadouts, skin variants and gun buddies
-- Current rank, recorded peak rank, level and RR
+- Current rank, recorded peak rank with its episode and act, level and RR
 - Player win rates and team averages
 - Headshot % from up to 10 recent Competitive matches
 - Agent-coloured names, with hidden names shown as their agent
@@ -49,4 +49,4 @@ Unofficial fan project. Not affiliated with Riot Games.
 
 Install Python with Tk support, then run `python -m pip install -r requirements.txt` and `python app/desktop.py`.
 
-The `app/` and `source/` folders contain the v1.0.20 application and launcher source. The ready-to-run Windows app, bundled Python, and dependency licenses are in the release ZIP.
+The `app/` and `source/` folders contain the v1.0.24 application and launcher source. The ready-to-run Windows app, bundled Python, and dependency licenses are in the release ZIP.

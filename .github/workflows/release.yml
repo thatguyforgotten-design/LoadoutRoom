@@ -1,0 +1,38 @@
+name: Build and publish Windows release
+
+on:
+  push:
+    branches: [main]
+    paths: [source/release-notes.md]
+  workflow_dispatch:
+
+concurrency:
+  group: loadoutroom-release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build Windows app and run regression checks
+        shell: pwsh
+        run: python source/build_release.py
+      - name: Publish application and matching update manifest
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $releaseInfo = Get-Content dist/update.json -Raw | ConvertFrom-Json
+          $tag = 'v' + $releaseInfo.version
+          $archive = 'dist/LoadoutRoom-' + $tag + '.zip'
+          gh release create $tag $archive dist/update.json --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title ('LoadoutRoom ' + $tag) --notes-file source/release-notes.md --latest
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

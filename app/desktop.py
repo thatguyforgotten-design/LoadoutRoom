@@ -22,14 +22,16 @@ if sys.stderr is None:
 import requests
 from PIL import Image, ImageTk
 from src.desktop_backend import Collector, sample_snapshot, HeadshotCollector
-from src.desktop_stats import team_summary
+from src.desktop_stats import team_summary, peak_label
 from src import desktop_updates as updates
 from src.desktop_colors import agent_color
 from src.windows_identity import set_process_identity, set_window_identity
 from src import desktop_appearance as appearance
 
-BG, PANEL, CARD, LINE = "#0d1017", "#11151e", "#1a202c", "#29303d"
-FG, MUTED, CORAL, BLUE, RED = "#f2f4fc", "#9aa8c0", "#ff626a", "#8bbfff", "#ff8790"
+BG, PANEL, CARD, LINE = "#0c0b14", "#14121f", "#201c30", "#3b324e"
+FG, MUTED, CORAL, BLUE, RED = "#f7f1e4", "#b1a6c2", "#ff626a", "#8bbfff", "#ff8790"
+
+GOLD = "#e6c58a"
 
 
 def percent(value):
@@ -197,7 +199,7 @@ class TrackerWindow:
         except (OSError, tk.TclError):
             logo.create_text(21, 21, text="LR", fill=CORAL, font=("Segoe UI", 18, "bold"))
         self.label(head, "Loadout", 25, bold=True).pack(side="left")
-        self.label(head, "Room", 25, color=CORAL).pack(side="left")
+        self.label(head, "Room", 25, color=GOLD).pack(side="left")
         self.button(head, "Refresh match", self.refresh, True).pack(side="right", padx=(10, 0))
         self.update_button = self.button(head, "Updates", self.update_menu)
         self.update_button.pack(side="right", padx=(8, 0))
@@ -249,7 +251,7 @@ class TrackerWindow:
         self.leader.grid(row=2, column=0, sticky="ew", pady=(3, 0))
         self.label(summaries, "Average player win rate this act in Competitive. Not a match-win prediction.",
                    8, MUTED, anchor="w", wraplength=260, justify="left").grid(row=3, column=0, sticky="ew", pady=(3, 4))
-        self.roster_heading = self.label(left, "MATCH ROSTER", 11, bold=True, anchor="w")
+        self.roster_heading = self.label(left, "MATCH ROSTER", 10, color=GOLD, bold=True, anchor="w")
         self.roster_heading.pack(fill="x", pady=(0, 3))
         teams = tk.Frame(left, bg=PANEL)
         teams.pack(fill="x", pady=(0, 3))
@@ -285,6 +287,8 @@ class TrackerWindow:
         self.player_title.pack(fill="x")
         self.player_subtitle = self.label(right, "Select a player to inspect their weapons.", 10, MUTED, anchor="w")
         self.player_subtitle.pack(fill="x", pady=(5, 4))
+        self.peak_label = self.label(right, "PEAK RANK  /  Select a player", 10, GOLD, anchor="w")
+        self.peak_label.pack(fill="x", pady=(0, 4))
         self.hs_label = self.label(right, "HS%: select a player", 9, MUTED, anchor="w")
         self.hs_label.pack(fill="x", pady=(0, 8))
         controls = tk.Frame(right, bg=PANEL)
@@ -295,7 +299,7 @@ class TrackerWindow:
         search = tk.Entry(controls, textvariable=self.search, bg=CARD, fg=FG, insertbackground=FG,
                           relief="flat", font=("Segoe UI", 10), width=16)
         search.pack(side="left", fill="x", expand=True, ipady=7)
-        self.label(right, "WEAPONS  /  EQUIPPED COLLECTION", 9, MUTED, anchor="w").pack(fill="x", pady=(0, 10))
+        self.label(right, "THE ARMORY  /  EQUIPPED COLLECTION", 9, GOLD, anchor="w").pack(fill="x", pady=(0, 10))
         canvas_box = tk.Frame(right, bg=PANEL)
         canvas_box.pack(fill="both", expand=True)
         self.canvas = tk.Canvas(canvas_box, bg=PANEL, highlightthickness=0, yscrollincrement=24)
@@ -718,8 +722,9 @@ class TrackerWindow:
         player = next((p for p in (self.snapshot or {}).get("players", []) if p["id"] == self.selected), None)
         columns = max(1, min(5, self.canvas.winfo_width() // 220))
         if player:
+            self.peak_label.config(text="PEAK RANK  /  " + peak_label(player))
             self.player_title.config(text=player["name"], fg=agent_color(player))
-            self.player_subtitle.config(text=player["agent"] + "  |  " + player["team"] + " team  |  " + str(player.get("rank", "Unavailable")) + "  |  Win rate " + percent(player.get("winRate")) + "  |  " + str(len(player.get("weapons", []))) + " weapons equipped" + "\nPeak (recorded): " + player.get("peakRank", "Unavailable") + "  |  Level " + str(player.get("level") if player.get("level") is not None else "Hidden") + "  |  RR " + str(player.get("rr") if player.get("rr") is not None else "N/A") + "  |  Games " + str(player.get("games") if player.get("games") is not None else "N/A"))
+            self.player_subtitle.config(text=player["agent"] + "  |  " + player["team"] + " team  |  " + str(player.get("rank", "Unavailable")) + "  |  Win rate " + percent(player.get("winRate")) + "  |  " + str(len(player.get("weapons", []))) + " weapons equipped" + "\nLevel " + str(player.get("level") if player.get("level") is not None else "Hidden") + "  |  RR " + str(player.get("rr") if player.get("rr") is not None else "N/A") + "  |  Games " + str(player.get("games") if player.get("games") is not None else "N/A"))
         equipment = [player["id"], player.get("weapons", [])] if player else None
         key = json.dumps([equipment, self.sample, self.search.get(), self.weapon_filter.get(), columns], sort_keys=True)
         if key == self.render_key:
@@ -732,6 +737,7 @@ class TrackerWindow:
         if not player:
             self.player_title.config(text="ALL EQUIPPED SKINS", fg=FG)
             self.player_subtitle.config(text="No player selected")
+            self.peak_label.config(text="PEAK RANK  /  Select a player")
             self.label(self.cards, "Your match, all in one window.", 16, bold=True,
                        wraplength=320, justify="left").pack(anchor="w", pady=(40, 12))
             self.label(self.cards, "Open VALORANT and join a match. Names, levels, win rates and loadouts will appear here automatically.",
@@ -740,7 +746,7 @@ class TrackerWindow:
                        wraplength=320, justify="left").pack(anchor="w", pady=18)
             return
         self.player_title.config(text=player["name"], fg=agent_color(player))
-        self.player_subtitle.config(text=player["agent"] + "  |  " + player["team"] + " team  |  " + str(player.get("rank", "Unavailable")) + "  |  Win rate " + percent(player.get("winRate")) + "  |  " + str(len(player.get("weapons", []))) + " weapons equipped" + "\nPeak (recorded): " + player.get("peakRank", "Unavailable") + "  |  Level " + str(player.get("level") if player.get("level") is not None else "Hidden") + "  |  RR " + str(player.get("rr") if player.get("rr") is not None else "N/A") + "  |  Games " + str(player.get("games") if player.get("games") is not None else "N/A"))
+        self.player_subtitle.config(text=player["agent"] + "  |  " + player["team"] + " team  |  " + str(player.get("rank", "Unavailable")) + "  |  Win rate " + percent(player.get("winRate")) + "  |  " + str(len(player.get("weapons", []))) + " weapons equipped" + "\nLevel " + str(player.get("level") if player.get("level") is not None else "Hidden") + "  |  RR " + str(player.get("rr") if player.get("rr") is not None else "N/A") + "  |  Games " + str(player.get("games") if player.get("games") is not None else "N/A"))
         weapons = player.get("weapons", [])
         choices = ["All weapons"] + sorted(set(w.get("weapon", "Unknown weapon") for w in weapons))
         self.combo.configure(values=choices)
@@ -756,10 +762,11 @@ class TrackerWindow:
         for col in range(5):
             self.cards.columnconfigure(col, weight=1 if col < columns else 0, uniform="equipment" if col < columns else "")
         for index, item in enumerate(selected):
-            surface = Surface(self.cards, fill=CARD, border="#354159", padding=18, radius=15)
+            surface = Surface(self.cards, fill=CARD, border="#4c3c59", padding=18, radius=15)
             surface.grid(row=index // columns, column=index % columns, sticky="nsew", pady=(0, 13), padx=(0, 10))
             card = surface.body
-            self.label(card, str(item.get("weapon", "Unknown weapon")).upper(), 9, CORAL, True).pack(anchor="w")
+            tk.Frame(card, bg=GOLD, height=2).pack(fill="x", pady=(0, 10))
+            self.label(card, str(item.get("weapon", "Unknown weapon")).upper(), 9, GOLD, True).pack(anchor="w")
             self.image_label(card, item.get("skinDisplayIcon"), standard=str(item.get("skinDisplayName", "")).casefold().startswith("standard "))
             self.label(card, item.get("skinDisplayName") or "Unknown skin", 12, bold=True,
                        wraplength=210, justify="left").pack(anchor="w", pady=(3, 0))

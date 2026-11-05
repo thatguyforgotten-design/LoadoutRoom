@@ -19,9 +19,6 @@ BASE_SHA256 = "82cf2dea02747ccd6173d95a6ee026764358984d3597820eeb6d40496de96dd8"
 def build(base_zip=None):
     if sys.platform != "win32":
         raise RuntimeError("Build this Windows application on Windows.")
-    sys.path.insert(0, str(ROOT / "app"))
-    from src.desktop_updates import VERSION, extract_release
-
     dist = ROOT / "dist"
     dist.mkdir(exist_ok=True)
     base_zip = Path(base_zip) if base_zip else dist / "base-v1.0.23.zip"
@@ -32,7 +29,17 @@ def build(base_zip=None):
         raise ValueError("The base runtime archive checksum does not match v1.0.23.")
 
     stage = Path(tempfile.mkdtemp(prefix="package-", dir=dist))
-    extract_release(base_zip, stage)
+    # This archive is pinned by SHA256 above. Bootstrap its bundled dependencies
+    # before importing the updater, so a clean build host needs only Python.
+    with zipfile.ZipFile(base_zip) as bundle:
+        for member in bundle.infolist():
+            if not (stage / member.filename).resolve().is_relative_to(stage.resolve()):
+                raise ValueError("Unsafe path in the base archive.")
+        bundle.extractall(stage)
+    sys.path.insert(0, str(stage / "runtime/Lib/site-packages"))
+    sys.path.insert(0, str(ROOT / "app"))
+    from src.desktop_updates import VERSION, extract_release
+
     # Replace code and tests with the reviewed repository snapshot, not older source.
     for name in ("app", "source"):
         target = (stage / name).resolve()

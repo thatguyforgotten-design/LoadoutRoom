@@ -5,3 +5,5 @@ Click a player to see the episode and act beside their recorded peak rank. Missi
 Includes the existing tracking fixes, standard weapon artwork, saved background colors, version footer and update-available indicator. Updates still ask permission before installing.
 
 Validation: 53 regression tests and the native desktop self-test pass. Live match and historical episode data still need in-game confirmation. Original credits and licenses are included.
+
+Python is bundled; no separate installation is needed.

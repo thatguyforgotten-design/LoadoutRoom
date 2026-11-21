@@ -4,3 +4,5 @@ The All weapons filter now opens as a custom dark picker, and the armory uses a 
 
 Existing match stats, player loadouts, peak-rank episode and act, saved background customization, and permission-based updates remain included. Original credits and licenses are included. Python is bundled; no separate installation is needed.
 
+Live match and historical episode data still need in-game confirmation.
+

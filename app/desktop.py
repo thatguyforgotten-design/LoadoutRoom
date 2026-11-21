@@ -28,14 +28,20 @@ from src.desktop_colors import agent_color
 from src.windows_identity import set_process_identity, set_window_identity
 from src import desktop_appearance as appearance
 
-BG, PANEL, CARD, LINE = "#0c0b14", "#14121f", "#201c30", "#3b324e"
-FG, MUTED, CORAL, BLUE, RED = "#f7f1e4", "#b1a6c2", "#ff626a", "#8bbfff", "#ff8790"
+BG, PANEL, CARD, LINE = "#0b0e14", "#131822", "#171E2B", "#252C37"
+FG, MUTED, CORAL, BLUE, RED = "#F4F7FA", "#8B95A5", "#FF4655", "#38BDF8", "#FF4655"
 
 GOLD = "#e6c58a"
 
 
 def percent(value):
     return "N/A" if value is None else format(value, ".1f") + "%"
+
+
+def tracked_text(text):
+    if isinstance(text, str) and text == text.upper() and any(char.isalpha() for char in text):
+        return "\u200a".join(text)
+    return text
 
 
 def allowed_art(url):
@@ -98,6 +104,48 @@ class Surface(tk.Frame):
             fill=self.fill, outline="", smooth=True, splinesteps=24)
 
 
+class DarkScrollbar(tk.Canvas):
+    """Small themed scrollbar for canvases, avoiding the Windows white trough."""
+    def __init__(self, parent, command, bg=PANEL, **kwargs):
+        super().__init__(parent, width=9, bg=bg, bd=0, highlightthickness=0,
+                         takefocus=0, **kwargs)
+        self.command = command
+        self.first, self.last = 0.0, 1.0
+        self.thumb_top, self.thumb_height = 0, 0
+        self.bind("<Configure>", self.draw)
+        self.bind("<Button-1>", self.press)
+        self.bind("<B1-Motion>", self.drag)
+        self.bind("<Enter>", lambda event: self.itemconfigure("thumb", fill="#465366"))
+        self.bind("<Leave>", lambda event: self.itemconfigure("thumb", fill="#303947"))
+
+    def set(self, first, last):
+        self.first, self.last = float(first), float(last)
+        self.draw()
+
+    def draw(self, event=None):
+        self.delete("all")
+        height = max(1, self.winfo_height())
+        if self.last - self.first >= 0.999:
+            self.thumb_height, self.thumb_top = height, 0
+            return
+        self.thumb_height = max(28, int(height * (self.last - self.first)))
+        self.thumb_top = int((height - self.thumb_height) * self.first / max(0.001, 1 - (self.last - self.first)))
+        self.create_rectangle(2, self.thumb_top, 7, self.thumb_top + self.thumb_height,
+                              fill="#303947", outline="", tags="thumb")
+
+    def press(self, event):
+        if self.thumb_top <= event.y <= self.thumb_top + self.thumb_height:
+            self.drag_offset = event.y - self.thumb_top
+        else:
+            self.drag_offset = self.thumb_height // 2
+            self.drag(event)
+
+    def drag(self, event):
+        span = max(1, self.winfo_height() - self.thumb_height)
+        fraction = min(1.0, max(0.0, (event.y - self.drag_offset) / span))
+        self.command("moveto", fraction)
+
+
 class TrackerWindow:
     def __init__(self, root, start_collector=True):
         self.root = root
@@ -141,7 +189,7 @@ class TrackerWindow:
                         borderwidth=0, rowheight=54, font=("Segoe UI", 10))
         style.configure("Treeview.Heading", background=CARD, foreground=MUTED,
                         borderwidth=0, relief="flat", font=("Segoe UI Semibold", 9))
-        style.map("Treeview", background=[("selected", "#3c3554")], foreground=[("selected", "white")])
+        style.map("Treeview", background=[("selected", "#202938")], foreground=[("selected", "white")])
         style.configure("TCombobox", fieldbackground=CARD, background=CARD, foreground=FG,
                         arrowcolor=FG, padding=5)
         style.map("TCombobox", fieldbackground=[("readonly", CARD)],
@@ -151,7 +199,7 @@ class TrackerWindow:
         self.build()
         self.apply_background(appearance.load_background(BG))
         self.search.trace_add("write", lambda *args: self.schedule_render())
-        self.weapon_filter.trace_add("write", lambda *args: self.schedule_render())
+        self.weapon_filter.trace_add("write", self.weapon_filter_changed)
         root.protocol("WM_DELETE_WINDOW", self.close)
         root.after(0, self.apply_window_style)
         root.after(100, self.process_events)
@@ -163,6 +211,8 @@ class TrackerWindow:
                 root.after(2500, lambda: self.check_updates(quiet=True))
 
     def label(self, parent, text, size=10, color=FG, bold=False, **kw):
+        if size <= 10:
+            text = tracked_text(text)
         original = color
         if parent.cget("bg") == self.background_color and color in (FG, MUTED):
             color = appearance.text_colors(self.background_color)[0 if color == FG else 1]
@@ -174,7 +224,7 @@ class TrackerWindow:
 
     def button(self, parent, title, action, accent=False):
         return tk.Button(parent, text=title, command=action, bg=CORAL if accent else CARD,
-                         fg=BG if accent else FG, activebackground="#d0c4ff" if accent else "#37415b",
+                         fg=BG if accent else FG, activebackground="#FF6875" if accent else "#273343",
                          activeforeground=BG if accent else FG, relief="flat", bd=0,
                          padx=20, pady=11, cursor="hand2", font=("Segoe UI Semibold", 10))
 
@@ -189,7 +239,7 @@ class TrackerWindow:
         self.version_label.pack(side="right", padx=(16, 0))
         self.updated = self.label(foot, "No live match received", 9, MUTED)
         self.updated.pack(side="right")
-        head = tk.Frame(self.root, bg=BG, padx=20, pady=10)
+        head = tk.Frame(self.root, bg=BG, padx=24, pady=7)
         head.pack(fill="x")
         logo = tk.Canvas(head, width=42, height=42, bg=BG, highlightthickness=0)
         logo.pack(side="left", padx=(0, 13))
@@ -200,7 +250,12 @@ class TrackerWindow:
             logo.create_text(21, 21, text="LR", fill=CORAL, font=("Segoe UI", 18, "bold"))
         self.label(head, "Loadout", 25, bold=True).pack(side="left")
         self.label(head, "Room", 25, color=GOLD).pack(side="left")
-        self.button(head, "Refresh match", self.refresh, True).pack(side="right", padx=(10, 0))
+        refresh_button = self.button(head, "Refresh match", self.refresh, True)
+        refresh_button.configure(highlightthickness=1, highlightbackground="#8A3542",
+                                 activebackground="#FF6875", padx=18, pady=10)
+        refresh_button.bind("<Enter>", lambda event: refresh_button.configure(bg="#FF5968", highlightbackground="#B84552"))
+        refresh_button.bind("<Leave>", lambda event: refresh_button.configure(bg=CORAL, highlightbackground="#8A3542"))
+        refresh_button.pack(side="right", padx=(10, 0))
         self.update_button = self.button(head, "Updates", self.update_menu)
         self.update_button.pack(side="right", padx=(8, 0))
         self.customize_button = self.button(head, "Customize", self.customize_menu)
@@ -216,34 +271,39 @@ class TrackerWindow:
             selectcolor=CARD, activebackground=BG, activeforeground=FG,
             font=("Segoe UI", 9)).pack(side="right")
         top = tk.Frame(self.root, bg=BG)
-        top.pack(fill="x", padx=20, pady=(8, 10))
+        top.pack(fill="x", padx=20, pady=(6, 8))
         stats_panel = tk.Frame(top, bg=PANEL, width=230)
         stats_panel.pack(side="left", fill="y", padx=(0, 12))
         roster_panel = tk.Frame(top, bg=BG)
         roster_panel.pack(side="left", fill="both", expand=True)
         left = roster_panel
-        inventory_panel = Surface(self.root, fill=PANEL, border=LINE, padding=12, radius=10)
-        inventory_panel.pack(fill="both", expand=True, padx=20, pady=(0, 6))
+        inventory_panel = Surface(self.root, fill=PANEL, border=LINE, padding=14, radius=10)
+        inventory_panel.pack(fill="both", expand=True, padx=20, pady=(0, 8))
         right = inventory_panel.body
         summaries = tk.Frame(stats_panel, bg=PANEL, pady=0)
         summaries.pack(fill="x")
         summaries.columnconfigure(0, weight=1)
         self.team_labels, self.team_bars = {}, {}
         for column, team, color in [(0, "Blue", BLUE), (1, "Red", RED)]:
-            surface = Surface(summaries, fill="#142137" if team == "Blue" else "#291e30",
-                              border="#304968" if team == "Blue" else "#51354a", padding=6, radius=8)
+            surface = Surface(summaries, fill="#111E2B" if team == "Blue" else "#21171D",
+                              border="#263B4C" if team == "Blue" else "#43242B", padding=8, radius=8)
             surface.grid(row=column, column=0, sticky="nsew", pady=(0, 4))
             box = surface.body
-            self.label(box, team.upper() + " TEAM", 8, color, True).pack(side="left", padx=(0, 6))
+            tk.Frame(box, bg=color, height=2).pack(fill="x", pady=(0, 6))
+            headrow = tk.Frame(box, bg=box.cget("bg"))
+            headrow.pack(fill="x")
+            self.label(headrow, team.upper() + " TEAM", 8, color, True).pack(side="left")
+            pill_bg = "#173044" if team == "Blue" else "#3B2028"
+            coverage = tk.Label(headrow, text=tracked_text("WAITING"), bg=pill_bg, fg=color,
+                                padx=6, pady=2, font=("Segoe UI Semibold", 7))
+            coverage.pack(side="right")
             numbers = tk.Frame(box, bg=box.cget("bg"))
             numbers.pack(fill="x")
-            rate = self.label(numbers, "N/A", 11, FG, True)
+            rate = self.label(numbers, "N/A", 13, FG, True)
             rate.pack(side="left")
-            coverage = self.label(numbers, "Waiting", 8, MUTED)
-            coverage.pack(side="right")
             self.team_labels[team] = (rate, coverage)
-            bar = tk.Canvas(box, height=5, bg=box.cget("bg"), highlightthickness=0)
-            bar.pack(side="bottom", fill="x", pady=(3, 0))
+            bar = tk.Canvas(box, height=2, bg=box.cget("bg"), highlightthickness=0)
+            bar.pack(side="bottom", fill="x", pady=(6, 0))
             self.team_bars[team] = (bar, color)
             bar.bind("<Configure>", lambda event, name=team: self.draw_team_bar(name))
         self.leader = self.label(summaries, "Team comparison appears when both teams have available stats.",
@@ -293,17 +353,21 @@ class TrackerWindow:
         self.hs_label.pack(fill="x", pady=(0, 8))
         controls = tk.Frame(right, bg=PANEL)
         controls.pack(fill="x", pady=(0, 10))
-        self.combo = ttk.Combobox(controls, textvariable=self.weapon_filter,
-                                 state="readonly", values=["All weapons"], width=16)
-        self.combo.pack(side="left", padx=(0, 8))
+        self.weapon_choices = ["All weapons"]
+        self.weapon_button = tk.Button(controls, text="All weapons  ▾", command=self.open_weapon_menu,
+            bg=CARD, fg=FG, activebackground="#202938", activeforeground=FG,
+            relief="flat", bd=0, highlightthickness=1, highlightbackground=LINE,
+            padx=12, pady=7, cursor="hand2", font=("Segoe UI Semibold", 9), anchor="w")
+        self.weapon_button.pack(side="left", padx=(0, 8))
         search = tk.Entry(controls, textvariable=self.search, bg=CARD, fg=FG, insertbackground=FG,
-                          relief="flat", font=("Segoe UI", 10), width=16)
+                          relief="flat", highlightthickness=1, highlightbackground=LINE,
+                          highlightcolor=BLUE, font=("Segoe UI", 10), width=16)
         search.pack(side="left", fill="x", expand=True, ipady=7)
-        self.label(right, "THE ARMORY  /  EQUIPPED COLLECTION", 9, GOLD, anchor="w").pack(fill="x", pady=(0, 10))
+        self.label(right, "THE ARMORY  /  EQUIPPED COLLECTION", 8, GOLD, anchor="w").pack(fill="x", pady=(0, 7))
         canvas_box = tk.Frame(right, bg=PANEL)
         canvas_box.pack(fill="both", expand=True)
         self.canvas = tk.Canvas(canvas_box, bg=PANEL, highlightthickness=0, yscrollincrement=24)
-        bar = ttk.Scrollbar(canvas_box, orient="vertical", command=self.canvas.yview)
+        bar = DarkScrollbar(canvas_box, command=self.canvas.yview, bg=PANEL)
         self.canvas.configure(yscrollcommand=bar.set)
         self.canvas.pack(side="left", fill="both", expand=True)
         bar.pack(side="right", fill="y")
@@ -316,12 +380,71 @@ class TrackerWindow:
 
     def draw_team_bar(self, name):
         bar, color = self.team_bars[name]
-        value = team_summary((self.snapshot or {}).get("players", []))[name]["average"] or 0
         width = max(bar.winfo_width(), 1)
         bar.delete("all")
-        bar.create_rectangle(0, 0, width, 5, fill="#30364b", outline="")
-        if value > 0:
-            bar.create_rectangle(0, 0, width * value / 100, 5, fill=color, outline="")
+        bar.create_rectangle(0, 0, width, 2, fill=color, outline="")
+
+    def weapon_filter_changed(self, *args):
+        self.schedule_render()
+        if hasattr(self, "weapon_button"):
+            self.weapon_button.configure(text=self.weapon_filter.get() + "  ▾")
+
+    def open_weapon_menu(self):
+        current = getattr(self, "weapon_popup", None)
+        if current is not None and current.winfo_exists():
+            current.destroy()
+            self.weapon_popup = None
+            return
+        popup = tk.Toplevel(self.root)
+        self.weapon_popup = popup
+        popup.overrideredirect(True)
+        popup.configure(bg=LINE)
+        popup.transient(self.root)
+        choices = self.weapon_choices
+        row_height = 31
+        visible_rows = min(len(choices), 8)
+        width = max(self.weapon_button.winfo_width(), 176)
+        x = self.weapon_button.winfo_rootx()
+        y = self.weapon_button.winfo_rooty() + self.weapon_button.winfo_height() + 4
+        popup.geometry(f"{width}x{visible_rows * row_height + 2}+{x}+{y}")
+        body = tk.Frame(popup, bg=CARD, padx=3, pady=3)
+        body.pack(fill="both", expand=True, padx=1, pady=1)
+        list_canvas = tk.Canvas(body, bg=CARD, highlightthickness=0, yscrollincrement=row_height)
+        scroll = DarkScrollbar(body, command=list_canvas.yview, bg=CARD)
+        list_canvas.configure(yscrollcommand=scroll.set)
+        list_canvas.pack(side="left", fill="both", expand=True)
+        scroll.pack(side="right", fill="y")
+        options = tk.Frame(list_canvas, bg=CARD)
+        options_id = list_canvas.create_window((0, 0), window=options, anchor="nw")
+        options.bind("<Configure>", lambda event: list_canvas.configure(scrollregion=list_canvas.bbox("all")))
+        list_canvas.bind("<Configure>", lambda event: list_canvas.itemconfigure(options_id, width=event.width))
+        for choice in choices:
+            button = tk.Button(options, text=choice, anchor="w",
+                command=lambda value=choice: self.choose_weapon(value),
+                bg="#202938" if choice == self.weapon_filter.get() else CARD,
+                fg=FG, activebackground="#273343", activeforeground=FG,
+                relief="flat", bd=0, padx=10, pady=5, cursor="hand2",
+                font=("Segoe UI", 9))
+            button.pack(fill="x")
+        popup.bind("<Escape>", lambda event: popup.destroy())
+        popup.bind("<FocusOut>", lambda event: popup.after_idle(self.close_weapon_menu_if_unfocused))
+        popup.focus_set()
+
+    def close_weapon_menu_if_unfocused(self):
+        popup = getattr(self, "weapon_popup", None)
+        if popup is None or not popup.winfo_exists():
+            return
+        focus = self.root.focus_get()
+        if focus is None or focus.winfo_toplevel() != popup:
+            popup.destroy()
+            self.weapon_popup = None
+
+    def choose_weapon(self, value):
+        self.weapon_filter.set(value)
+        popup = getattr(self, "weapon_popup", None)
+        if popup is not None and popup.winfo_exists():
+            popup.destroy()
+        self.weapon_popup = None
 
     def apply_window_style(self):
         try:
@@ -338,7 +461,7 @@ class TrackerWindow:
         foreground, muted = appearance.text_colors(color)
         def recolor(widget):
             options = widget.keys()
-            if not self.appearance_initialized and "background" in options and widget.cget("background").lower() == BG:
+            if not self.appearance_initialized and "background" in options and widget.cget("background").lower() == BG.lower():
                 widget._custom_background = True
             if getattr(widget, "_custom_background", False):
                 if "foreground" in options:
@@ -349,7 +472,7 @@ class TrackerWindow:
                 widget.configure(background=color)
             for option in ("activebackground", "highlightbackground"):
                 flag = "_custom_" + option
-                if not self.appearance_initialized and option in options and str(widget.cget(option)).lower() == BG:
+                if not self.appearance_initialized and option in options and str(widget.cget(option)).lower() == BG.lower():
                     setattr(widget, flag, True)
                 if getattr(widget, flag, False):
                     widget.configure(**{option: color})
@@ -505,7 +628,7 @@ class TrackerWindow:
             self.connection.config(text="Returning to live match...", fg=appearance.text_colors(self.background_color)[1])
             for team in self.team_labels.values():
                 team[0].config(text="N/A")
-                team[1].config(text="Waiting for live data")
+                team[1].config(text=tracked_text("WAITING"))
             for name in self.team_bars:
                 self.draw_team_bar(name)
             self.leader.config(text="Waiting for both teams.", fg=MUTED)
@@ -567,7 +690,8 @@ class TrackerWindow:
         for name in ("Blue", "Red"):
             team = summary[name]
             self.team_labels[name][0].config(text=percent(team["average"]))
-            self.team_labels[name][1].config(text=str(team["available"]) + "/" + str(team["total"]) + " players with stats")
+            status = (str(team["available"]) + "/" + str(team["total"]) + " READY") if team["available"] else "WAITING"
+            self.team_labels[name][1].config(text=tracked_text(status))
             self.draw_team_bar(name)
         leader = summary["leader"]
         if snapshot.get("partial"):
@@ -583,7 +707,7 @@ class TrackerWindow:
             if any(summary[t]["available"] < summary[t]["total"] for t in ("Blue", "Red")):
                 title += " Partial data."
         self.leader.config(text=title, fg=color)
-        self.roster_heading.config(text="MATCH ROSTER  /  " + str(len(players)) + " PLAYERS")
+        self.roster_heading.config(text=tracked_text("MATCH ROSTER  /  " + str(len(players)) + " PLAYERS"))
         visible = [p for p in players if self.team_filter == "All" or p.get("team") == self.team_filter]
         ids = {p["id"] for p in visible}
         for old in self.tree.get_children():
@@ -623,8 +747,10 @@ class TrackerWindow:
             button = self.player_buttons[subject]
             text = player.get("name", "") + "\n" + player.get("agent", "") + " · " + percent(player.get("winRate")) + "\n" + player.get("rank", "Unavailable") + " | Peak " + player.get("peakRank", "Unavailable")
             color = agent_color(player)
-            button.configure(text=text, fg=color, bg="#3c3554" if subject == self.selected else CARD,
-                             activebackground="#3c3554", activeforeground=color)
+            team = player.get("team")
+            selected_bg = "#123047" if team == "Blue" else "#3A2029" if team == "Red" else "#202938"
+            button.configure(text=text, fg=color, bg=selected_bg if subject == self.selected else CARD,
+                             activebackground=selected_bg, activeforeground=color)
             button.grid(row=index // 5, column=index % 5, sticky="nsew", padx=3, pady=3)
 
     def choose_player(self, subject):
@@ -690,7 +816,8 @@ class TrackerWindow:
     def filter_team(self, name):
         self.team_filter = name
         for team, button in self.team_buttons.items():
-            button.configure(bg="#302332" if team == name else CARD)
+            selected_bg = {"All": "#202938", "Blue": "#123047", "Red": "#3A2029"}.get(team, CARD)
+            button.configure(bg=selected_bg if team == name else CARD)
         if self.snapshot:
             self.apply_snapshot(self.snapshot)
 
@@ -704,6 +831,7 @@ class TrackerWindow:
 
     def resize_inventory(self, event):
         self.canvas.itemconfigure(self.canvas_window, width=event.width)
+        self.canvas.itemconfigure(self.canvas_window, height=max(event.height, self.cards.winfo_reqheight()))
         self.schedule_render()
 
     def schedule_render(self):
@@ -738,18 +866,34 @@ class TrackerWindow:
             self.player_title.config(text="ALL EQUIPPED SKINS", fg=FG)
             self.player_subtitle.config(text="No player selected")
             self.peak_label.config(text="PEAK RANK  /  Select a player")
-            self.label(self.cards, "Your match, all in one window.", 16, bold=True,
-                       wraplength=320, justify="left").pack(anchor="w", pady=(40, 12))
-            self.label(self.cards, "Open VALORANT and join a match. Names, levels, win rates and loadouts will appear here automatically.",
-                       11, MUTED, wraplength=320, justify="left").pack(anchor="w")
-            self.label(self.cards, "You can use Show sample to preview the layout.", 10, MUTED,
-                       wraplength=320, justify="left").pack(anchor="w", pady=18)
+            empty = tk.Frame(self.cards, bg=PANEL)
+            empty.pack(fill="both", expand=True)
+            empty_inner = tk.Frame(empty, bg=PANEL)
+            empty_inner.place(relx=0.5, rely=0.5, anchor="center")
+            radar = tk.Canvas(empty_inner, width=58, height=58, bg=PANEL,
+                              highlightthickness=0)
+            radar.pack(pady=(0, 12))
+            radar.create_oval(8, 8, 50, 50, outline="#344253", width=1)
+            radar.create_oval(18, 18, 40, 40, outline="#344253", width=1)
+            radar.create_line(29, 5, 29, 53, fill="#344253", width=1)
+            radar.create_line(5, 29, 53, 29, fill="#344253", width=1)
+            radar.create_arc(8, 8, 50, 50, start=18, extent=72, style="arc",
+                             outline=BLUE, width=2)
+            radar.create_oval(34, 19, 39, 24, fill=CORAL, outline="")
+            self.label(empty_inner, "YOUR MATCH, ALL IN ONE WINDOW", 8, FG, True,
+                       justify="center").pack(pady=(0, 7))
+            self.label(empty_inner, "Open VALORANT and join a match...", 11, FG,
+                       justify="center").pack()
+            self.label(empty_inner, "Names, stats, and loadouts will appear here automatically.",
+                       9, MUTED, wraplength=420, justify="center").pack(pady=(4, 0))
+            self.label(empty_inner, "Use Show sample to preview the overlay.", 9, MUTED,
+                       justify="center").pack(pady=(9, 0))
             return
         self.player_title.config(text=player["name"], fg=agent_color(player))
         self.player_subtitle.config(text=player["agent"] + "  |  " + player["team"] + " team  |  " + str(player.get("rank", "Unavailable")) + "  |  Win rate " + percent(player.get("winRate")) + "  |  " + str(len(player.get("weapons", []))) + " weapons equipped" + "\nLevel " + str(player.get("level") if player.get("level") is not None else "Hidden") + "  |  RR " + str(player.get("rr") if player.get("rr") is not None else "N/A") + "  |  Games " + str(player.get("games") if player.get("games") is not None else "N/A"))
         weapons = player.get("weapons", [])
         choices = ["All weapons"] + sorted(set(w.get("weapon", "Unknown weapon") for w in weapons))
-        self.combo.configure(values=choices)
+        self.weapon_choices = choices
         if self.weapon_filter.get() not in choices:
             self.weapon_filter.set("All weapons")
         search = self.search.get().strip().casefold()
@@ -762,7 +906,7 @@ class TrackerWindow:
         for col in range(5):
             self.cards.columnconfigure(col, weight=1 if col < columns else 0, uniform="equipment" if col < columns else "")
         for index, item in enumerate(selected):
-            surface = Surface(self.cards, fill=CARD, border="#4c3c59", padding=18, radius=15)
+            surface = Surface(self.cards, fill=CARD, border=LINE, padding=14, radius=10)
             surface.grid(row=index // columns, column=index % columns, sticky="nsew", pady=(0, 13), padx=(0, 10))
             card = surface.body
             tk.Frame(card, bg=GOLD, height=2).pack(fill="x", pady=(0, 10))
@@ -859,3 +1003,4 @@ if __name__ == "__main__":
             except Exception:
                 pass
             raise
+

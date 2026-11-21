@@ -22,7 +22,7 @@ class CustomizationAndUpdatesTests(unittest.TestCase):
                 self.root.after_cancel(callback)
             self.app.close()
         self.addCleanup(close)
-        self.release = {"version": "1.0.24", "notes": "Test"}
+        self.release = {"version": desktop.updates.VERSION, "notes": "Test"}
 
     def test_startup_badge_does_not_prompt_or_install(self):
         with patch.object(desktop.messagebox, "askyesno") as prompt, patch.object(desktop.updates, "install_release") as install:
@@ -71,3 +71,4 @@ class CustomizationAndUpdatesTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

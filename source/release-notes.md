@@ -1,9 +1,6 @@
-LoadoutRoom now has a deep plum background, warm gold accents and gold-trimmed weapon cards. Agent colors, the coral LR icon and compact team win rates are still here.
+LoadoutRoom v1.0.25 refreshes the desktop interface with a tactical charcoal theme, crisp panel borders, and tighter spacing.
 
-Click a player to see the episode and act beside their recorded peak rank. Missing season information shows as unavailable instead of guessing an episode.
+The All weapons filter now opens as a custom dark picker, and the armory uses a slim dark scrollbar. Blue and Red team cards use clean accent bars and coverage pills. The no-match state is centered with a radar-style icon, and Refresh match has a subtle hover glow.
 
-Includes the existing tracking fixes, standard weapon artwork, saved background colors, version footer and update-available indicator. Updates still ask permission before installing.
+Existing match stats, player loadouts, peak-rank episode and act, saved background customization, and permission-based updates remain included. Original credits and licenses are included. Python is bundled; no separate installation is needed.
 
-Validation: 53 regression tests and the native desktop self-test pass. Live match and historical episode data still need in-game confirmation. Original credits and licenses are included.
-
-Python is bundled; no separate installation is needed.

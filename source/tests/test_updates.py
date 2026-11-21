@@ -5,7 +5,8 @@ from src import desktop_updates as u
 
 class UpdateTests(unittest.TestCase):
     def release(self, **kw):
-        return dict(version="1.0.25", url="https://example.com/app.zip", sha256="a"*64, notes="Test", **kw)
+        major, minor, patch = u.version_tuple(u.VERSION)
+        return dict(version=f"{major}.{minor}.{patch + 1}", url="https://example.com/app.zip", sha256="a"*64, notes="Test", **kw)
     def test_versions(self):
         self.assertGreater(u.version_tuple("1.0.24"),u.version_tuple("1.0.9"))
         for bad in ("x", "1.0", "1.0.2;run"):
@@ -14,8 +15,9 @@ class UpdateTests(unittest.TestCase):
         for bad in ("http://example.com", "file:///test", "https://user:pass@example.com/a"):
             with self.assertRaises(ValueError): u.https_url(bad)
     def test_new_release(self):
-        with patch.object(u,"read_https",return_value=json.dumps(self.release()).encode()):
-            self.assertEqual(u.check_update("https://example.com/feed")["version"],"1.0.25")
+        release = self.release()
+        with patch.object(u,"read_https",return_value=json.dumps(release).encode()):
+            self.assertEqual(u.check_update("https://example.com/feed")["version"],release["version"])
     def test_current(self):
         release=self.release(); release["version"]=u.VERSION
         with patch.object(u,"read_https",return_value=json.dumps(release).encode()):
@@ -62,3 +64,4 @@ class UpdateTests(unittest.TestCase):
             self.assertEqual(u.read_settings(),{"feed":u.DEFAULT_FEED,"check_on_start":True})
 
 if __name__=="__main__": unittest.main()
+
